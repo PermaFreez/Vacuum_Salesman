@@ -1,8 +1,9 @@
 use bevy::prelude::*;
 
-const BACKGROUND_COLOR: Color = Color::rgb(0.9, 0.9, 0.9);
-const PLAYER_SIZE: f32 = 60.0;
+const BACKGROUND_COLOR: Color = Color::rgb(0.9, 0.7, 0.6);
+const PLAYER_SIZE: f32 = 47.0;
 const PLAYER_COLOR: Color = Color::rgb(0.0, 0.3, 0.4);
+const PLAYER_SPEED: f32 = 5.0;
 const SCORE_FONT_SIZE: f32 = 60.0;
 const SCORE_FONT_COLOR: Color = Color::rgb(0.4, 0.5, 0.5);
 
@@ -54,16 +55,37 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             custom_size: Some(Vec2::new(PLAYER_SIZE, PLAYER_SIZE)),
             ..Default::default()
         },
+        transform: Transform {
+            translation: Vec3::new(0.0, 0.0, 0.0),
+//            scale: PLAYER_SIZE
+            ..Default::default()
+        },
         ..Default::default()
     }).insert(Player);
 }
 
 fn move_player(keyboard_input: Res<Input<KeyCode>>, 
-               mut query: Query<With<Player>>) {
+               mut query: Query<&mut Transform, With<Player>>) {
     let mut player_transform = query.single_mut();
+
+    let mut x_change: f32 = 0.0;
+    let mut y_change: f32 = 0.0;
+
     if keyboard_input.pressed(KeyCode::Left) {
-        player_transform.translation.x += 1;
+        x_change -= PLAYER_SPEED;
     }
+    if keyboard_input.pressed(KeyCode::Right) {
+        x_change += PLAYER_SPEED;
+    }
+    if keyboard_input.pressed(KeyCode::Up) {
+        y_change += PLAYER_SPEED;
+    }
+    if keyboard_input.pressed(KeyCode::Down) {
+        y_change -= PLAYER_SPEED;
+    }
+
+    player_transform.translation.x += x_change;
+    player_transform.translation.y += y_change;
 }
     
 
