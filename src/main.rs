@@ -2,6 +2,7 @@ use bevy::{
     prelude::*,
     core::FixedTimestep,
 };
+use rand::Rng;
 
 const TIME_STEP: f32 = 1.0 / 60.0;
 
@@ -9,6 +10,8 @@ const BACKGROUND_COLOR: Color = Color::rgb(0.9, 0.7, 0.6);
 const PLAYER_SIZE: f32 = 47.0;
 const PLAYER_COLOR: Color = Color::rgb(0.0, 0.3, 0.4);
 const PLAYER_SPEED: f32 = 300.0;
+const TARGET_SIZE: f32 = 25.0;
+const TARGET_COLOR: Color = Color::rgb(0.8, 0.2, 0.2);
 const SCORE_FONT_SIZE: f32 = 60.0;
 const SCORE_FONT_COLOR: Color = Color::rgb(0.4, 0.5, 0.5);
 const MAX_TARGETS: u8 = 10;
@@ -16,6 +19,9 @@ const MAX_TARGETS: u8 = 10;
 fn main() {
     App::new()
         .insert_resource(WindowDescriptor {
+            mode: bevy::window::WindowMode::SizedFullscreen,
+            width: 1920.0,
+            height: 1080.0,
             title: "Block Snake".to_string(),
             ..Default::default()
         })
@@ -75,7 +81,6 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         },
         transform: Transform {
             translation: Vec3::new(0.0, 0.0, 0.0),
-//            scale: PLAYER_SIZE
             ..Default::default()
         },
         ..Default::default()
@@ -107,7 +112,7 @@ fn move_player(keyboard_input: Res<Input<KeyCode>>,
     player_transform.translation.y += y_change;
 }
     
-fn handle_targets(mut query: Query<&mut Transform, With<Target>>) {
+fn handle_targets(mut commands: Commands, mut query: Query<&mut Transform, With<Target>>) {
     let mut remaining_targets: u8 = 0;
 
     for target in query.iter() {
@@ -115,10 +120,24 @@ fn handle_targets(mut query: Query<&mut Transform, With<Target>>) {
     }
 
     if remaining_targets == 0 {
-        spawn_targets();
+//        let taken 
+        for i in 0..MAX_TARGETS {
+            let x: f32 = rand::thread_rng().gen_range(1.0, 501.0);
+            let y: f32 = rand::thread_rng().gen_range(1.0, 501.0);
+            
+            commands.spawn_bundle(SpriteBundle {
+                sprite: Sprite {
+                    color: TARGET_COLOR,
+                    custom_size: Some(Vec2::new(TARGET_SIZE, TARGET_SIZE)),
+                    ..Default::default()
+                },
+                transform: Transform {
+                    translation: Vec3::new(x, y, 0.0),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }).insert(Target)
+            .insert(Collider);
+        }
     }
-}
-
-fn spawn_targets() {
-//    println!("Spawning new targets!");
 }
