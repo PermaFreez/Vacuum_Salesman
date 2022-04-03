@@ -17,6 +17,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup)
         .add_system(move_player)
+        .add_system(bevy::input::system::exit_on_esc_system)
         .run();
 }
 
