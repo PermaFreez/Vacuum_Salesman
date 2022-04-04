@@ -1,6 +1,7 @@
 use bevy::{
     prelude::*,
     core::FixedTimestep,
+    sprite::collide_aabb::{collide, Collision},
 };
 use rand::Rng;
 
@@ -24,6 +25,7 @@ const SCOREBOARD_Y_OFFSET: f32 = 50.0;
 // Map variables
 const MAP_SIZE_X: f32 = 600.0;
 const MAP_SIZE_Y: f32 = 300.0;
+//const WALL_THICKNES: u8 = 30;
 
 fn main() {
     App::new()
@@ -40,7 +42,8 @@ fn main() {
         .add_startup_system(setup)
         .add_system_set(
             SystemSet::new()
-                .with_run_criteria(FixedTimestep::step(TIME_STEP as f64)),
+                .with_run_criteria(FixedTimestep::step(TIME_STEP as f64))
+                .with_system(check_collisions),
         )
         .add_system(move_player)
         .add_system(handle_targets)
@@ -163,5 +166,20 @@ fn handle_scores(time: Res<Time>, mut score_timer: ResMut<ScoreTimer>, mut query
     if score_timer.0.tick(time.delta()).just_finished() {
         scoreboard.sections[0].value = (scoreboard.sections[0].value.parse::<i32>()
                                         .expect("Code error - Shouldn't make score into a strig") + SCORE_STEP).to_string();
+    }
+}
+
+fn check_collisions(mut commands: Commands, collider_query: Query<(&mut Transform, Entity, With<Target>)>, mut player_query: Query<&mut Transform, With<Player>>) {
+    let player_transform = player_query.single_mut();
+    for target in collider_query.iter() {
+        let collision = collide(
+            target.0.translation,
+            target.0.scale.truncate(),
+            player_transform.translation,
+            player_transform.scale.truncate(),
+        );
+        /*if let Some(collision) = collision {
+            commands.entity(target.1).despawn();
+        }*/
     }
 }
