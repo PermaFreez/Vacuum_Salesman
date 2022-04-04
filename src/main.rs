@@ -129,16 +129,15 @@ fn move_player(keyboard_input: Res<Input<KeyCode>>,
     player_transform.translation.y += y_change;
 }
     
-fn handle_targets(mut commands: Commands, mut query: Query<&mut Transform, With<Target>>) {
+fn handle_targets(mut commands: Commands, query: Query<&mut Transform, With<Target>>) {
     let mut remaining_targets: u8 = 0;
     
-    for target in query.iter() {
+    for _target in query.iter() {
         remaining_targets += 1
     }
 
     if remaining_targets == 0 {
-//        let taken 
-        for i in 0..MAX_TARGETS {
+        for _i in 0..MAX_TARGETS {
             let x: f32 = rand::thread_rng().gen_range(-MAP_SIZE_X, MAP_SIZE_X + 1.0);
             let y: f32 = rand::thread_rng().gen_range(-MAP_SIZE_Y, MAP_SIZE_Y + 1.0);
             
@@ -159,7 +158,7 @@ fn handle_targets(mut commands: Commands, mut query: Query<&mut Transform, With<
     }
 }
 
-fn handle_scores(time: Res<Time>, mut score_timer: ResMut<ScoreTimer>, mut commands: Commands, mut query: Query<&mut Text, With<ScoreBoard>>) {
+fn handle_scores(time: Res<Time>, mut score_timer: ResMut<ScoreTimer>, mut query: Query<&mut Text, With<ScoreBoard>>) {
     let mut scoreboard = query.single_mut();
     if score_timer.0.tick(time.delta()).just_finished() {
         scoreboard.sections[0].value = (scoreboard.sections[0].value.parse::<i32>().expect("Code error - Shouldn't make score into a strig") + SCORE_STEP).to_string();
