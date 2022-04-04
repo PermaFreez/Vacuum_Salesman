@@ -15,7 +15,7 @@ const PLAYER_SPEED: f32 = 600.0;
 // Target variables
 const TARGET_SIZE: f32 = 25.0;
 const TARGET_COLOR: Color = Color::rgb(0.8, 0.2, 0.2);
-const MAX_TARGETS: u8 = 2;
+const MAX_TARGETS: u8 = 100;
 // Score and scoreboard vairables
 const SCORE_STEP: i32 = 1;
 const SCORE_DIFFERENCE: f32 = 0.03;
@@ -174,32 +174,13 @@ fn check_collisions(mut commands: Commands,
                     targets: Query<(Entity, &Transform), With<Target>>) {    
     let player_transform = player.single_mut();
     for target in targets.iter() {
-        /*println!("{} {} {} {}",
+        if collide(
             target.1.translation,
-            target.1.scale.truncate(),
+            Vec2::new(TARGET_SIZE, TARGET_SIZE),
             player_transform.translation,
-            player_transform.scale.truncate());
-        let collision = collide(
-            target.1.translation,
-            target.1.scale.truncate(),
-            player_transform.translation,
-            player_transform.scale.truncate(),
-        );
-        if let Some(collision) = collision {*/
-        if manual_collide(&player_transform, &target.1) {
-            println!("ütközés");
+            Vec2::new(PLAYER_SIZE, PLAYER_SIZE),
+        ).is_some() {
             commands.entity(target.0).despawn();
         }
     }
-}
-
-// This little piece of code is needed, because I couldn't figure out how collision_aabb works. Not
-// in an hour and not in two
-fn manual_collide(a: &Transform, b: &Transform) -> bool {
-    let ab_distance_x = (a.translation[0] - b.translation[0]).abs();
-    let ab_distance_y = (a.translation[1] - b.translation[1]).abs();
-    let ab_size_x = (a.scale[0] + b.scale[0]) / 2.0;
-    let ab_size_y = (a.scale[1] + b.scale[1]) / 2.0;
-    
-    ab_distance_x <= ab_size_x || ab_distance_y <= ab_size_y
 }
