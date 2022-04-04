@@ -7,15 +7,21 @@ use rand::Rng;
 const TIME_STEP: f32 = 1.0 / 60.0;
 
 const BACKGROUND_COLOR: Color = Color::rgb(0.9, 0.7, 0.6);
+// Player variables
 const PLAYER_SIZE: f32 = 47.0;
 const PLAYER_COLOR: Color = Color::rgb(0.0, 0.3, 0.4);
 const PLAYER_SPEED: f32 = 600.0;
+// Target variables
 const TARGET_SIZE: f32 = 25.0;
 const TARGET_COLOR: Color = Color::rgb(0.8, 0.2, 0.2);
+const MAX_TARGETS: u8 = 30;
+// Score and scoreboard vairables
+const SCORE_STEP: i32 = 1;
+const SCORE_DIFFERENCE: f32 = 0.03;
 const SCORE_FONT_SIZE: f32 = 60.0;
 const SCORE_FONT_COLOR: Color = Color::rgb(0.4, 0.5, 0.5);
 const SCOREBOARD_Y_OFFSET: f32 = 50.0;
-const MAX_TARGETS: u8 = 30;
+// Map variables
 const MAP_SIZE_X: f32 = 600.0;
 const MAP_SIZE_Y: f32 = 300.0;
 
@@ -29,7 +35,7 @@ fn main() {
             ..Default::default()
         })
         .insert_resource(ClearColor(BACKGROUND_COLOR))
-        .insert_resource(ScoreTimer(Timer::from_seconds(0.03, true)))
+        .insert_resource(ScoreTimer(Timer::from_seconds(SCORE_DIFFERENCE, true)))
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup)
         .add_system_set(
@@ -156,6 +162,6 @@ fn handle_targets(mut commands: Commands, mut query: Query<&mut Transform, With<
 fn handle_scores(time: Res<Time>, mut score_timer: ResMut<ScoreTimer>, mut commands: Commands, mut query: Query<&mut Text, With<ScoreBoard>>) {
     let mut scoreboard = query.single_mut();
     if score_timer.0.tick(time.delta()).just_finished() {
-        scoreboard.sections[0].value = (scoreboard.sections[0].value.parse::<i32>().expect("Code error - Shouldn't make score into a strig") + 1).to_string();
+        scoreboard.sections[0].value = (scoreboard.sections[0].value.parse::<i32>().expect("Code error - Shouldn't make score into a strig") + SCORE_STEP).to_string();
     }
 }
