@@ -182,15 +182,14 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 fn move_player(keyboard_input: Res<Input<KeyCode>>, 
-               mut query: QuerySet<(
-                   QueryState<&mut Transform, With<Player>>,
-                   QueryState<&Transform, With<Wall>>)>) {
-    let mut player_transform = query.q0().single_mut();
+               player_query: Query<&mut Transform, With<Player>>,
+               wall_query: Query<(Entity, &Transform), With<Wall>>) {
+    let mut player_transform = player_query.single_mut();
 
     let mut x_change: f32 = 0.0;
     let mut y_change: f32 = 0.0;
     
-    for wall in query.q1().iter() {
+    for wall in wall_query.iter() {
         let collision = collide(
             wall.translation,
             wall.scale.truncate(),
