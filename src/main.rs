@@ -9,7 +9,7 @@ const TIME_STEP: f32 = 1.0 / 60.0;
 const BACKGROUND_COLOR: Color = Color::rgb(0.9, 0.7, 0.6);
 const PLAYER_SIZE: f32 = 47.0;
 const PLAYER_COLOR: Color = Color::rgb(0.0, 0.3, 0.4);
-const PLAYER_SPEED: f32 = 500.0;
+const PLAYER_SPEED: f32 = 600.0;
 const TARGET_SIZE: f32 = 25.0;
 const TARGET_COLOR: Color = Color::rgb(0.8, 0.2, 0.2);
 const SCORE_FONT_SIZE: f32 = 60.0;
@@ -29,6 +29,7 @@ fn main() {
             ..Default::default()
         })
         .insert_resource(ClearColor(BACKGROUND_COLOR))
+        .insert_resource(ScoreTimer(Timer::from_seconds(0.03, true)))
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup)
         .add_system_set(
@@ -37,9 +38,12 @@ fn main() {
         )
         .add_system(move_player)
         .add_system(handle_targets)
+        .add_system(handle_scores)
         .add_system(bevy::input::system::exit_on_esc_system)
         .run();
 }
+
+struct ScoreTimer(Timer);
 
 #[derive(Component)]
 struct ScoreBoard;
@@ -121,7 +125,7 @@ fn move_player(keyboard_input: Res<Input<KeyCode>>,
     
 fn handle_targets(mut commands: Commands, mut query: Query<&mut Transform, With<Target>>) {
     let mut remaining_targets: u8 = 0;
-
+    
     for target in query.iter() {
         remaining_targets += 1
     }
@@ -146,5 +150,12 @@ fn handle_targets(mut commands: Commands, mut query: Query<&mut Transform, With<
             }).insert(Target)
             .insert(Collider);
         }
+    }
+}
+
+fn handle_scores(time: Res<Time>, mut score_timer: ResMut<ScoreTimer>, mut commands: Commands, mut query: Query<&mut Text, With<ScoreBoard>>) {
+    let mut scoreboard = query.single_mut();
+    if score_timer.0.tick(time.delta()).just_finished() {
+        scoreboard.sections[0].value = (scoreboard.sections[0].value.parse::<i32>().expect("Code error - Shouldn't make score into a strig") + 1).to_string();
     }
 }
