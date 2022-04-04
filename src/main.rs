@@ -9,7 +9,7 @@ const TIME_STEP: f32 = 1.0 / 60.0;
 const BACKGROUND_COLOR: Color = Color::rgb(0.9, 0.7, 0.6);
 const PLAYER_SIZE: f32 = 47.0;
 const PLAYER_COLOR: Color = Color::rgb(0.0, 0.3, 0.4);
-const PLAYER_SPEED: f32 = 300.0;
+const PLAYER_SPEED: f32 = 500.0;
 const TARGET_SIZE: f32 = 25.0;
 const TARGET_COLOR: Color = Color::rgb(0.8, 0.2, 0.2);
 const SCORE_FONT_SIZE: f32 = 60.0;
@@ -102,16 +102,16 @@ fn move_player(keyboard_input: Res<Input<KeyCode>>,
     let mut x_change: f32 = 0.0;
     let mut y_change: f32 = 0.0;
 
-    if keyboard_input.pressed(KeyCode::Left) {
+    if keyboard_input.pressed(KeyCode::Left) || keyboard_input.pressed(KeyCode::A)  {
         x_change -= PLAYER_SPEED * TIME_STEP;
     }
-    if keyboard_input.pressed(KeyCode::Right) {
+    if keyboard_input.pressed(KeyCode::Right) || keyboard_input.pressed(KeyCode::D)  {
         x_change += PLAYER_SPEED * TIME_STEP;
     }
-    if keyboard_input.pressed(KeyCode::Up) {
+    if keyboard_input.pressed(KeyCode::Up) || keyboard_input.pressed(KeyCode::W) {
         y_change += PLAYER_SPEED * TIME_STEP;
     }
-    if keyboard_input.pressed(KeyCode::Down) {
+    if keyboard_input.pressed(KeyCode::Down) || keyboard_input.pressed(KeyCode::S) {
         y_change -= PLAYER_SPEED * TIME_STEP;
     }
 
