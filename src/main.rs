@@ -161,6 +161,7 @@ fn handle_targets(mut commands: Commands, query: Query<&mut Transform, With<Targ
 fn handle_scores(time: Res<Time>, mut score_timer: ResMut<ScoreTimer>, mut query: Query<&mut Text, With<ScoreBoard>>) {
     let mut scoreboard = query.single_mut();
     if score_timer.0.tick(time.delta()).just_finished() {
-        scoreboard.sections[0].value = (scoreboard.sections[0].value.parse::<i32>().expect("Code error - Shouldn't make score into a strig") + SCORE_STEP).to_string();
+        scoreboard.sections[0].value = (scoreboard.sections[0].value.parse::<i32>()
+                                        .expect("Code error - Shouldn't make score into a strig") + SCORE_STEP).to_string();
     }
 }
