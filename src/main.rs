@@ -14,7 +14,10 @@ const TARGET_SIZE: f32 = 25.0;
 const TARGET_COLOR: Color = Color::rgb(0.8, 0.2, 0.2);
 const SCORE_FONT_SIZE: f32 = 60.0;
 const SCORE_FONT_COLOR: Color = Color::rgb(0.4, 0.5, 0.5);
-const MAX_TARGETS: u8 = 10;
+const SCOREBOARD_Y_OFFSET: f32 = 50.0;
+const MAX_TARGETS: u8 = 30;
+const MAP_SIZE_X: f32 = 600.0;
+const MAP_SIZE_Y: f32 = 300.0;
 
 fn main() {
     App::new()
@@ -62,12 +65,16 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         color: SCORE_FONT_COLOR,
     };
     let text_alignment = TextAlignment {
-        vertical: VerticalAlign::Top,
+        vertical: VerticalAlign::Center,
         horizontal: HorizontalAlign::Center,
     };
     commands
         .spawn_bundle(Text2dBundle {
         text: Text::with_section("0", text_style.clone(), text_alignment),
+        transform: Transform {
+            translation: Vec3::new(0.0, MAP_SIZE_Y + SCOREBOARD_Y_OFFSET, 0.0),
+            ..Default::default()
+        },
         ..Default::default()
         })
         .insert(ScoreBoard);
@@ -122,8 +129,8 @@ fn handle_targets(mut commands: Commands, mut query: Query<&mut Transform, With<
     if remaining_targets == 0 {
 //        let taken 
         for i in 0..MAX_TARGETS {
-            let x: f32 = rand::thread_rng().gen_range(1.0, 501.0);
-            let y: f32 = rand::thread_rng().gen_range(1.0, 501.0);
+            let x: f32 = rand::thread_rng().gen_range(-MAP_SIZE_X, MAP_SIZE_X + 1.0);
+            let y: f32 = rand::thread_rng().gen_range(-MAP_SIZE_Y, MAP_SIZE_Y + 1.0);
             
             commands.spawn_bundle(SpriteBundle {
                 sprite: Sprite {
