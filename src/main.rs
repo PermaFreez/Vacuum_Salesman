@@ -15,7 +15,7 @@ const PLAYER_SPEED: f32 = 600.0;
 // Target variables
 const TARGET_SIZE: f32 = 25.0;
 const TARGET_COLOR: Color = Color::rgb(0.8, 0.2, 0.2);
-const MAX_TARGETS: u8 = 30;
+const MAX_TARGETS: u8 = 2;
 // Score and scoreboard vairables
 const SCORE_STEP: i32 = 1;
 const SCORE_DIFFERENCE: f32 = 0.03;
@@ -128,8 +128,8 @@ fn move_player(keyboard_input: Res<Input<KeyCode>>,
         y_change -= PLAYER_SPEED * TIME_STEP;
     }
 
-    player_transform.translation.x += x_change;
-    player_transform.translation.y += y_change;
+    player_transform.translation.x += x_change.floor();
+    player_transform.translation.y += y_change.floor();
 }
     
 fn handle_targets(mut commands: Commands, query: Query<&mut Transform, With<Target>>) {
@@ -141,8 +141,8 @@ fn handle_targets(mut commands: Commands, query: Query<&mut Transform, With<Targ
 
     if remaining_targets == 0 {
         for _i in 0..MAX_TARGETS {
-            let x: f32 = rand::thread_rng().gen_range(-MAP_SIZE_X, MAP_SIZE_X + 1.0);
-            let y: f32 = rand::thread_rng().gen_range(-MAP_SIZE_Y, MAP_SIZE_Y + 1.0);
+            let x: f32 = rand::thread_rng().gen_range(-MAP_SIZE_X,MAP_SIZE_X + 1.0);
+            let y: f32 = rand::thread_rng().gen_range(-MAP_SIZE_Y,MAP_SIZE_Y + 1.0);
             
             commands.spawn_bundle(SpriteBundle {
                 sprite: Sprite {
@@ -151,7 +151,7 @@ fn handle_targets(mut commands: Commands, query: Query<&mut Transform, With<Targ
                     ..Default::default()
                 },
                 transform: Transform {
-                    translation: Vec3::new(x, y, 0.0),
+                    translation: Vec3::new(x.floor(), y.floor(), 0.0),
                     ..Default::default()
                 },
                 ..Default::default()
@@ -169,17 +169,37 @@ fn handle_scores(time: Res<Time>, mut score_timer: ResMut<ScoreTimer>, mut query
     }
 }
 
-fn check_collisions(mut commands: Commands, collider_query: Query<(&mut Transform, Entity, With<Target>)>, mut player_query: Query<&mut Transform, With<Player>>) {
-    let player_transform = player_query.single_mut();
-    for target in collider_query.iter() {
+fn check_collisions(mut commands: Commands,
+                    mut player: Query<&Transform, With<Player>>,
+                    targets: Query<(Entity, &Transform), With<Target>>) {    
+    let player_transform = player.single_mut();
+    for target in targets.iter() {
+        /*println!("{} {} {} {}",
+            target.1.translation,
+            target.1.scale.truncate(),
+            player_transform.translation,
+            player_transform.scale.truncate());
         let collision = collide(
-            target.0.translation,
-            target.0.scale.truncate(),
+            target.1.translation,
+            target.1.scale.truncate(),
             player_transform.translation,
             player_transform.scale.truncate(),
         );
-        /*if let Some(collision) = collision {
-            commands.entity(target.1).despawn();
-        }*/
+        if let Some(collision) = collision {*/
+        if manual_collide(&player_transform, &target.1) {
+            println!("ütközés");
+            commands.entity(target.0).despawn();
+        }
     }
+}
+
+// This little piece of code is needed, because I couldn't figure out how collision_aabb works. Not
+// in an hour and not in two
+fn manual_collide(a: &Transform, b: &Transform) -> bool {
+    let ab_distance_x = (a.translation[0] - b.translation[0]).abs();
+    let ab_distance_y = (a.translation[1] - b.translation[1]).abs();
+    let ab_size_x = (a.scale[0] + b.scale[0]) / 2.0;
+    let ab_size_y = (a.scale[1] + b.scale[1]) / 2.0;
+    
+    ab_distance_x <= ab_size_x || ab_distance_y <= ab_size_y
 }
