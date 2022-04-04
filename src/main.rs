@@ -21,11 +21,15 @@ const SCORE_STEP: i32 = 1;
 const SCORE_DIFFERENCE: f32 = 0.03;
 const SCORE_FONT_SIZE: f32 = 60.0;
 const SCORE_FONT_COLOR: Color = Color::rgb(0.4, 0.5, 0.5);
-const SCOREBOARD_Y_OFFSET: f32 = 50.0;
+const SCOREBOARD_Y_OFFSET: f32 = 100.0;
 // Map variables
 const MAP_SIZE_X: f32 = 600.0;
 const MAP_SIZE_Y: f32 = 300.0;
-//const WALL_THICKNES: u8 = 30;
+// Wall variables
+const WALL_COLOR: Color = Color::rgb(0.0, 0.0, 0.0);
+const WALL_THICKNESS: f32 = TARGET_SIZE;
+const WALL_HEIGHT: f32 = (MAP_SIZE_Y + WALL_THICKNESS * 1.5) * 2.0;
+const WALL_LENGTH: f32 = (MAP_SIZE_X + WALL_THICKNESS * 1.5) * 2.0;
 
 fn main() {
     App::new()
@@ -43,7 +47,7 @@ fn main() {
         .add_system_set(
             SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(TIME_STEP as f64))
-                .with_system(check_collisions),
+                .with_system(check_eating),
         )
         .add_system(move_player)
         .add_system(handle_targets)
@@ -65,6 +69,9 @@ struct Target;
 
 #[derive(Component)]
 struct Collider;
+
+#[derive(Component)]
+struct Wall;
 
 pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Spawning the camera
@@ -92,6 +99,72 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         })
         .insert(ScoreBoard);
 
+    // Spawning wall
+    // Left
+    commands
+        .spawn_bundle(SpriteBundle {
+            sprite: Sprite {
+                color: WALL_COLOR,
+                custom_size: Some(Vec2::new(WALL_THICKNESS, WALL_HEIGHT)),
+                ..Default::default()
+            },
+            transform: Transform {
+                translation: Vec3::new(-MAP_SIZE_X - WALL_THICKNESS, 0.0, 0.0),
+                ..Default::default()
+            },
+            ..Default::default()
+        }).insert(Wall)
+    .insert(Collider);
+
+    // Right
+    commands
+        .spawn_bundle(SpriteBundle {
+            sprite: Sprite {
+                color: WALL_COLOR,
+                custom_size: Some(Vec2::new(WALL_THICKNESS, WALL_HEIGHT)),
+                ..Default::default()
+            },
+            transform: Transform {
+                translation: Vec3::new(MAP_SIZE_X + WALL_THICKNESS, 0.0, 0.0),
+                ..Default::default()
+            },
+            ..Default::default()
+        }).insert(Wall)
+    .insert(Collider);
+
+    // Up
+    commands
+        .spawn_bundle(SpriteBundle {
+            sprite: Sprite {
+                color: WALL_COLOR,
+                custom_size: Some(Vec2::new(WALL_LENGTH, WALL_THICKNESS)),
+                ..Default::default()
+            },
+            transform: Transform {
+                translation: Vec3::new(0.0, MAP_SIZE_Y + WALL_THICKNESS, 0.0),
+                ..Default::default()
+            },
+            ..Default::default()
+        }).insert(Wall)
+    .insert(Collider);
+
+    // Down
+    commands
+        .spawn_bundle(SpriteBundle {
+            sprite: Sprite {
+                color: WALL_COLOR,
+                custom_size: Some(Vec2::new(WALL_LENGTH, WALL_THICKNESS)),
+                ..Default::default()
+            },
+            transform: Transform {
+                translation: Vec3::new(0.0, -MAP_SIZE_Y - WALL_THICKNESS, 0.0),
+                ..Default::default()
+            },
+            ..Default::default()
+        }).insert(Wall)
+    .insert(Collider);
+
+
     // Spawning the player sprite
     commands.spawn_bundle(SpriteBundle {
         sprite: Sprite {
@@ -109,11 +182,27 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 fn move_player(keyboard_input: Res<Input<KeyCode>>, 
-               mut query: Query<&mut Transform, With<Player>>) {
-    let mut player_transform = query.single_mut();
+               mut query: QuerySet<(
+                   QueryState<&mut Transform, With<Player>>,
+                   QueryState<&Transform, With<Wall>>)>) {
+    let mut player_transform = query.q0().single_mut();
 
     let mut x_change: f32 = 0.0;
     let mut y_change: f32 = 0.0;
+    
+    for wall in query.q1().iter() {
+        let collision = collide(
+            wall.translation,
+            wall.scale.truncate(),
+            player_transform.translation,
+            player_transform.scale.truncate(),
+        );
+        
+        match collision {
+            Some(Collision::Left) => println!("Left"),
+            _ => (),
+        }
+    }
 
     if keyboard_input.pressed(KeyCode::Left) || keyboard_input.pressed(KeyCode::A)  {
         x_change -= PLAYER_SPEED * TIME_STEP;
@@ -142,7 +231,7 @@ fn handle_targets(mut commands: Commands, query: Query<&mut Transform, With<Targ
     if remaining_targets == 0 {
         for _i in 0..MAX_TARGETS {
             let x: f32 = rand::thread_rng().gen_range(-MAP_SIZE_X,MAP_SIZE_X + 1.0);
-            let y: f32 = rand::thread_rng().gen_range(-MAP_SIZE_Y,MAP_SIZE_Y + 1.0);
+            let y: f32 = rand::thread_rng().gen_range(-MAP_SIZE_Y,MAP_SIZE_Y);
             
             commands.spawn_bundle(SpriteBundle {
                 sprite: Sprite {
@@ -169,7 +258,7 @@ fn handle_scores(time: Res<Time>, mut score_timer: ResMut<ScoreTimer>, mut query
     }
 }
 
-fn check_collisions(mut commands: Commands,
+fn check_eating(mut commands: Commands,
                     mut player: Query<&Transform, With<Player>>,
                     targets: Query<(Entity, &Transform), With<Target>>) {    
     let player_transform = player.single_mut();
