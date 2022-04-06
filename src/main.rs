@@ -70,9 +70,6 @@ struct Target;
 #[derive(Component)]
 struct Collider;
 
-#[derive(Component)]
-struct Wall;
-
 pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Spawning the camera
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
@@ -113,7 +110,7 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                 ..Default::default()
             },
             ..Default::default()
-        }).insert(Wall)
+        })
     .insert(Collider);
 
     // Right
@@ -129,7 +126,7 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                 ..Default::default()
             },
             ..Default::default()
-        }).insert(Wall)
+        })
     .insert(Collider);
 
     // Up
@@ -145,7 +142,7 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                 ..Default::default()
             },
             ..Default::default()
-        }).insert(Wall)
+        })
     .insert(Collider);
 
     // Down
@@ -161,10 +158,9 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                 ..Default::default()
             },
             ..Default::default()
-        }).insert(Wall)
+        })
     .insert(Collider);
-
-
+    
     // Spawning the player sprite
     commands.spawn_bundle(SpriteBundle {
         sprite: Sprite {
@@ -177,22 +173,21 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             ..Default::default()
         },
         ..Default::default()
-    }).insert(Player)
-    .insert(Collider);
+    }).insert(Player);
 }
 
 fn move_player(keyboard_input: Res<Input<KeyCode>>, 
                 mut queries: QuerySet<(
                     QueryState<&mut Transform, With<Player>>,
-                    QueryState<&Transform, With<Wall>>)>) {
+                    QueryState<&Transform, With<Collider>>)>) {
 
     let mut x_change: f32 = 0.0;
     let mut y_change: f32 = 0.0;
 
-    let mut walls: Vec<Transform> = Vec::new();
+    let mut colliders: Vec<Transform> = Vec::new();
 
-    for wall in queries.q1().iter() {
-        walls.push(wall.clone());
+    for collider in queries.q1().iter() {
+        colliders.push(collider.clone());
     }
     
     let mut left = true;
@@ -200,10 +195,10 @@ fn move_player(keyboard_input: Res<Input<KeyCode>>,
     let mut up = true;
     let mut down = true;
 
-    for wall in walls {
+    for collider in colliders {
         let collision = collide(
-            wall.translation,
-            wall.scale.truncate(),
+            collider.translation,
+            collider.scale.truncate(),
             queries.q0().single().translation,
             queries.q0().single().scale.truncate(),
         );
@@ -257,8 +252,7 @@ fn handle_targets(mut commands: Commands, query: Query<&mut Transform, With<Targ
                     ..Default::default()
                 },
                 ..Default::default()
-            }).insert(Target)
-            .insert(Collider);
+            }).insert(Target);
         }
     }
 }
