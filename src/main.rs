@@ -26,7 +26,7 @@ const SCOREBOARD_Y_OFFSET: f32 = 100.0;
 const MAP_SIZE_X: f32 = 600.0;
 const MAP_SIZE_Y: f32 = 300.0;
 // Wall variables
-const WALL_COLOR: Color = Color::rgb(0.0, 0.0, 0.0);
+const WALL_COLOR: Color = Color::rgb(0.2, 0.2, 0.2);
 const WALL_THICKNESS: f32 = TARGET_SIZE;
 const WALL_HEIGHT: f32 = (MAP_SIZE_Y + WALL_THICKNESS * 1.5) * 2.0;
 const WALL_LENGTH: f32 = (MAP_SIZE_X + WALL_THICKNESS * 1.5) * 2.0;
