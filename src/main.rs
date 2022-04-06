@@ -105,11 +105,11 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
                 color: WALL_COLOR,
-                custom_size: Some(Vec2::new(WALL_THICKNESS, WALL_HEIGHT)),
                 ..Default::default()
             },
             transform: Transform {
                 translation: Vec3::new(-MAP_SIZE_X - WALL_THICKNESS, 0.0, 0.0),
+                scale: Vec3::new(WALL_THICKNESS, WALL_HEIGHT, 0.0),
                 ..Default::default()
             },
             ..Default::default()
@@ -121,11 +121,11 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
                 color: WALL_COLOR,
-                custom_size: Some(Vec2::new(WALL_THICKNESS, WALL_HEIGHT)),
                 ..Default::default()
             },
             transform: Transform {
                 translation: Vec3::new(MAP_SIZE_X + WALL_THICKNESS, 0.0, 0.0),
+                scale: Vec3::new(WALL_THICKNESS, WALL_HEIGHT, 0.0),
                 ..Default::default()
             },
             ..Default::default()
@@ -137,11 +137,11 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
                 color: WALL_COLOR,
-                custom_size: Some(Vec2::new(WALL_LENGTH, WALL_THICKNESS)),
                 ..Default::default()
             },
             transform: Transform {
                 translation: Vec3::new(0.0, MAP_SIZE_Y + WALL_THICKNESS, 0.0),
+                scale: Vec3::new(WALL_LENGTH, WALL_THICKNESS, 0.0),
                 ..Default::default()
             },
             ..Default::default()
@@ -153,11 +153,11 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
                 color: WALL_COLOR,
-                custom_size: Some(Vec2::new(WALL_LENGTH, WALL_THICKNESS)),
                 ..Default::default()
             },
             transform: Transform {
                 translation: Vec3::new(0.0, -MAP_SIZE_Y - WALL_THICKNESS, 0.0),
+                scale: Vec3::new(WALL_LENGTH, WALL_THICKNESS, 0.0),
                 ..Default::default()
             },
             ..Default::default()
@@ -169,11 +169,11 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn_bundle(SpriteBundle {
         sprite: Sprite {
             color: PLAYER_COLOR,
-            custom_size: Some(Vec2::new(PLAYER_SIZE, PLAYER_SIZE)),
             ..Default::default()
         },
         transform: Transform {
             translation: Vec3::new(0.0, 0.0, 0.0),
+            scale: Vec3::new(PLAYER_SIZE, PLAYER_SIZE, 0.0),
             ..Default::default()
         },
         ..Default::default()
@@ -182,42 +182,56 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 fn move_player(keyboard_input: Res<Input<KeyCode>>, 
-               player_query: Query<&mut Transform, With<Player>>,
-               wall_query: Query<(Entity, &Transform), With<Wall>>) {
-    let mut player_transform = player_query.single_mut();
+                mut queries: QuerySet<(
+                    QueryState<&mut Transform, With<Player>>,
+                    QueryState<&Transform, With<Wall>>)>) {
 
     let mut x_change: f32 = 0.0;
     let mut y_change: f32 = 0.0;
+
+    let mut walls: Vec<Transform> = Vec::new();
+
+    for wall in queries.q1().iter() {
+        walls.push(wall.clone());
+    }
     
-    for wall in wall_query.iter() {
+    let mut left = true;
+    let mut right = true;
+    let mut up = true;
+    let mut down = true;
+
+    for wall in walls {
         let collision = collide(
             wall.translation,
             wall.scale.truncate(),
-            player_transform.translation,
-            player_transform.scale.truncate(),
+            queries.q0().single().translation,
+            queries.q0().single().scale.truncate(),
         );
-        
+
         match collision {
-            Some(Collision::Left) => println!("Left"),
-            _ => (),
+            Some(Collision::Left) => {left = false},
+            Some(Collision::Right) => {right = false},
+            Some(Collision::Top) => {up = false},
+            Some(Collision::Bottom) => {down = false},
+            None => {},
         }
     }
 
-    if keyboard_input.pressed(KeyCode::Left) || keyboard_input.pressed(KeyCode::A)  {
+    if (keyboard_input.pressed(KeyCode::Left) || keyboard_input.pressed(KeyCode::A)) && left {
         x_change -= PLAYER_SPEED * TIME_STEP;
     }
-    if keyboard_input.pressed(KeyCode::Right) || keyboard_input.pressed(KeyCode::D)  {
+    if (keyboard_input.pressed(KeyCode::Right) || keyboard_input.pressed(KeyCode::D)) && right {
         x_change += PLAYER_SPEED * TIME_STEP;
     }
-    if keyboard_input.pressed(KeyCode::Up) || keyboard_input.pressed(KeyCode::W) {
+    if (keyboard_input.pressed(KeyCode::Up) || keyboard_input.pressed(KeyCode::W)) && up {
         y_change += PLAYER_SPEED * TIME_STEP;
     }
-    if keyboard_input.pressed(KeyCode::Down) || keyboard_input.pressed(KeyCode::S) {
+    if (keyboard_input.pressed(KeyCode::Down) || keyboard_input.pressed(KeyCode::S)) && down {
         y_change -= PLAYER_SPEED * TIME_STEP;
     }
 
-    player_transform.translation.x += x_change.floor();
-    player_transform.translation.y += y_change.floor();
+    queries.q0().single_mut().translation.x += x_change.floor();
+    queries.q0().single_mut().translation.y += y_change.floor();
 }
     
 fn handle_targets(mut commands: Commands, query: Query<&mut Transform, With<Target>>) {
@@ -235,11 +249,11 @@ fn handle_targets(mut commands: Commands, query: Query<&mut Transform, With<Targ
             commands.spawn_bundle(SpriteBundle {
                 sprite: Sprite {
                     color: TARGET_COLOR,
-                    custom_size: Some(Vec2::new(TARGET_SIZE, TARGET_SIZE)),
                     ..Default::default()
                 },
                 transform: Transform {
                     translation: Vec3::new(x.floor(), y.floor(), 0.0),
+                    scale: Vec3::new(TARGET_SIZE, TARGET_SIZE, 0.0),
                     ..Default::default()
                 },
                 ..Default::default()
@@ -264,9 +278,9 @@ fn check_eating(mut commands: Commands,
     for target in targets.iter() {
         if collide(
             target.1.translation,
-            Vec2::new(TARGET_SIZE, TARGET_SIZE),
+            target.1.scale.truncate(),
             player_transform.translation,
-            Vec2::new(PLAYER_SIZE, PLAYER_SIZE),
+            player_transform.scale.truncate(),
         ).is_some() {
             commands.entity(target.0).despawn();
         }
