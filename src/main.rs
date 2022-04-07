@@ -2,10 +2,17 @@ use bevy::{
     prelude::*,
     core::FixedTimestep,
     sprite::collide_aabb::{collide, Collision},
+    ecs::{
+        world::World,
+        prelude::EventWriter,
+    },
+    app::AppExit,
 };
+
 use rand::Rng;
 
 const TIME_STEP: f32 = 1.0 / 60.0;
+const WINDOW_NAME: &str = "Vacuum salesman";
 
 const BACKGROUND_COLOR: Color = Color::rgb(0.9, 0.7, 0.6);
 // Player variables
@@ -34,10 +41,11 @@ const WALL_LENGTH: f32 = (MAP_SIZE_X + WALL_THICKNESS * 1.5) * 2.0;
 fn main() {
     App::new()
         .insert_resource(WindowDescriptor {
-            mode: bevy::window::WindowMode::SizedFullscreen,
+            mode: bevy::window::WindowMode::Windowed,
             width: 1920.0,
             height: 1080.0,
-            title: "Block Snake".to_string(),
+            resizable: true,
+            title: WINDOW_NAME.to_string(),
             ..Default::default()
         })
         .insert_resource(ClearColor(BACKGROUND_COLOR))
@@ -53,6 +61,7 @@ fn main() {
         .add_system(handle_targets)
         .add_system(handle_scores)
         .add_system(bevy::input::system::exit_on_esc_system)
+        .add_system(exit_on_q)
         .run();
 }
 
@@ -185,11 +194,11 @@ fn move_player(keyboard_input: Res<Input<KeyCode>>,
     let mut y_change: f32 = 0.0;
 
     let mut colliders: Vec<Transform> = Vec::new();
-
+    
     for collider in queries.q1().iter() {
         colliders.push(collider.clone());
     }
-    
+
     let mut left = true;
     let mut right = true;
     let mut up = true;
@@ -278,5 +287,27 @@ fn check_eating(mut commands: Commands,
         ).is_some() {
             commands.entity(target.0).despawn();
         }
+    }
+}
+
+fn set_fullscreen(keyboard_input: Res<Input<KeyCode>>, world: &mut World) {
+    let mut world = world.cell();
+    let mut windows = world.get_resource_mut::<Windows>().unwrap();
+    for window in windows.iter_mut() {
+        if keyboard_input.pressed(KeyCode::F11) {
+            window
+                .set_minimized(true);
+            /*window
+                .set_fullscreen(Some(window::Fullscreen::Exclusive(
+                    get_best_videomode(&window.current_monitor().unwrap()),
+            )));*/
+        }
+    }
+}
+
+fn exit_on_q(keyboard_input: Res<Input<KeyCode>>,
+             mut app_exit_events: EventWriter<AppExit>) {
+    if keyboard_input.pressed(KeyCode::Q) {
+        app_exit_events.send(AppExit);
     }
 }
