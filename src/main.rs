@@ -25,7 +25,7 @@ const TARGET_COLOR: Color = Color::rgb(0.8, 0.2, 0.2);
 const MAX_TARGETS: u8 = 100;
 // Score and scoreboard vairables
 const SCORE_STEP: i32 = 1;
-const SCORE_DIFFERENCE: f32 = 0.03;
+const SCORE_DIFFERENCE: f32 = 0.01;
 const SCORE_FONT_SIZE: f32 = 60.0;
 const SCORE_FONT_COLOR: Color = Color::rgb(0.4, 0.5, 0.5);
 const SCOREBOARD_Y_OFFSET: f32 = 100.0;
@@ -62,6 +62,7 @@ fn main() {
         .add_system(handle_scores)
         .add_system(bevy::input::system::exit_on_esc_system)
         .add_system(exit_on_q)
+        .add_system(set_fullscreen)
         .run();
 }
 
@@ -290,13 +291,12 @@ fn check_eating(mut commands: Commands,
     }
 }
 
-fn set_fullscreen(keyboard_input: Res<Input<KeyCode>>, world: &mut World) {
+fn set_fullscreen(keyboard_input: Res<Input<KeyCode>>, mut window: &Window) {
     let mut world = world.cell();
     let mut windows = world.get_resource_mut::<Windows>().unwrap();
     for window in windows.iter_mut() {
         if keyboard_input.pressed(KeyCode::F11) {
-            window
-                .set_minimized(true);
+            println!("{}", window.title());
             /*window
                 .set_fullscreen(Some(window::Fullscreen::Exclusive(
                     get_best_videomode(&window.current_monitor().unwrap()),
