@@ -290,7 +290,7 @@ fn check_eating(mut commands: Commands,
 }
 
 fn set_fullscreen(keyboard_input: Res<Input<KeyCode>>, mut windows: ResMut<Windows>) {
-    let mut window = windows.get_primary_mut().unwrap();
+    let window = windows.get_primary_mut().unwrap();
     if keyboard_input.just_pressed(KeyCode::F11) {
         match window.mode() {
             WindowMode::Fullscreen => window.set_mode(WindowMode::Windowed),
