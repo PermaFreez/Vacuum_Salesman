@@ -20,6 +20,7 @@ const PLAYER_SPEED: f32 = 600.0;
 // Target variables
 const TARGET_SIZE: f32 = 25.0;
 const TARGET_COLOR: Color = Color::rgb(0.8, 0.2, 0.2);
+const TARGET_SPEED: f32 = 200.0;
 const MAX_TARGETS: u8 = 100;
 // Score and scoreboard vairables
 const SCORE_STEP: i32 = 1;
@@ -54,13 +55,15 @@ fn main() {
             SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(TIME_STEP as f64))
                 .with_system(move_player)
-                .with_system(check_eating),
+                .with_system(check_eating)
+                .with_system(move_targets),
         )
         .add_system(handle_targets)
         .add_system(handle_scores)
         .add_system(bevy::input::system::exit_on_esc_system)
         .add_system(exit_on_q)
         .add_system(set_fullscreen)
+        .add_system(change_direction)
         .run();
 }
 
@@ -77,6 +80,9 @@ struct Target;
 
 #[derive(Component)]
 struct Collider;
+
+#[derive(Component)]
+struct MoveDirection(Option<Direction>);
 
 pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Spawning the camera
@@ -248,7 +254,17 @@ fn handle_targets(mut commands: Commands, query: Query<&mut Transform, With<Targ
         for _i in 0..MAX_TARGETS {
             let x: f32 = rand::thread_rng().gen_range(-MAP_SIZE_X,MAP_SIZE_X + 1.0);
             let y: f32 = rand::thread_rng().gen_range(-MAP_SIZE_Y,MAP_SIZE_Y);
-            
+            let direction: u8 = rand::thread_rng().gen_range(0, 4);
+            let mut direct_enum: Option<Direction> = None;
+
+            match direction {
+                0 => direct_enum = Some(Direction::Lu),
+                1 => direct_enum = Some(Direction::Ru),
+                2 => direct_enum = Some(Direction::Ld),
+                3 => direct_enum = Some(Direction::Rd),
+                _ => (),
+            }
+                  
             commands.spawn_bundle(SpriteBundle {
                 sprite: Sprite {
                     color: TARGET_COLOR,
@@ -260,7 +276,8 @@ fn handle_targets(mut commands: Commands, query: Query<&mut Transform, With<Targ
                     ..Default::default()
                 },
                 ..Default::default()
-            }).insert(Target);
+            }).insert(Target)
+            .insert(MoveDirection(direct_enum));
         }
     }
 }
@@ -305,4 +322,70 @@ fn exit_on_q(keyboard_input: Res<Input<KeyCode>>,
     if keyboard_input.just_pressed(KeyCode::Q) {
         app_exit_events.send(AppExit);
     }
+}
+
+fn move_targets(mut query: Query<(&mut Transform, &MoveDirection), With<Target>>) {
+    for mut target in query.iter_mut() {
+        match target.1.0 {
+            Some(Direction::Lu) => {target.0.translation.x -= TARGET_SPEED * TIME_STEP; target.0.translation.y += TARGET_SPEED * TIME_STEP},
+            Some(Direction::Ru) => {target.0.translation.x += TARGET_SPEED * TIME_STEP; target.0.translation.y += TARGET_SPEED * TIME_STEP},
+            Some(Direction::Ld) => {target.0.translation.x -= TARGET_SPEED * TIME_STEP; target.0.translation.y -= TARGET_SPEED * TIME_STEP},
+            Some(Direction::Rd) => {target.0.translation.x += TARGET_SPEED * TIME_STEP; target.0.translation.y -= TARGET_SPEED * TIME_STEP},
+            None => (),
+        }
+    }
+}
+
+fn change_direction(mut queries: QuerySet<(
+                        QueryState<(&mut Transform, &mut MoveDirection), With<Target>>,
+                        QueryState<&Transform, With<Collider>>)>) { 
+    
+
+    let mut colliders: Vec<Transform> = Vec::new();
+    
+    for collider in queries.q1().iter() {
+        colliders.push(collider.clone());
+    }
+    
+    for collider in colliders {
+        for mut target in queries.q0().iter_mut() {
+            let collision = collide(
+                collider.translation,
+                collider.scale.truncate(),
+                target.0.translation,
+                target.0.scale.truncate(),
+            );
+            
+            match collision {
+                Some(Collision::Left) => match target.1.0 {
+                        Some(Direction::Lu) => target.1.0 = Some(Direction::Ru),
+                        Some(Direction::Ld) => target.1.0 = Some(Direction::Rd),
+                        _ => ()
+                    },
+                Some(Collision::Right) => match target.1.0 {
+                        Some(Direction::Ru) => target.1.0 = Some(Direction::Lu),
+                        Some(Direction::Rd) => target.1.0 = Some(Direction::Ld),
+                        _ => ()
+                    },
+                Some(Collision::Top) => match target.1.0 {
+                        Some(Direction::Lu) => target.1.0 = Some(Direction::Ld),
+                        Some(Direction::Ru) => target.1.0 = Some(Direction::Rd),
+                        _ => ()
+                    },
+                Some(Collision::Bottom) => match target.1.0 {
+                        Some(Direction::Ld) => target.1.0 = Some(Direction::Lu),
+                        Some(Direction::Rd) => target.1.0 = Some(Direction::Ru),
+                        _ => ()
+                    },
+                None => {},
+            }
+        }
+    }
+}
+
+enum Direction {
+    Lu,
+    Ru,
+    Ld,
+    Rd,
 }
