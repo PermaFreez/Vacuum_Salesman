@@ -2,11 +2,9 @@ use bevy::{
     prelude::*,
     core::FixedTimestep,
     sprite::collide_aabb::{collide, Collision},
-    ecs::{
-        world::World,
-        prelude::EventWriter,
-    },
+    ecs::prelude::EventWriter,
     app::AppExit,
+    window::WindowMode
 };
 
 use rand::Rng;
@@ -41,7 +39,7 @@ const WALL_LENGTH: f32 = (MAP_SIZE_X + WALL_THICKNESS * 1.5) * 2.0;
 fn main() {
     App::new()
         .insert_resource(WindowDescriptor {
-            mode: bevy::window::WindowMode::Windowed,
+            mode: WindowMode::Windowed,
             width: 1920.0,
             height: 1080.0,
             resizable: true,
@@ -55,9 +53,9 @@ fn main() {
         .add_system_set(
             SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(TIME_STEP as f64))
+                .with_system(move_player)
                 .with_system(check_eating),
         )
-        .add_system(move_player)
         .add_system(handle_targets)
         .add_system(handle_scores)
         .add_system(bevy::input::system::exit_on_esc_system)
@@ -291,23 +289,20 @@ fn check_eating(mut commands: Commands,
     }
 }
 
-fn set_fullscreen(keyboard_input: Res<Input<KeyCode>>, mut window: &Window) {
-    let mut world = world.cell();
-    let mut windows = world.get_resource_mut::<Windows>().unwrap();
-    for window in windows.iter_mut() {
-        if keyboard_input.pressed(KeyCode::F11) {
-            println!("{}", window.title());
-            /*window
-                .set_fullscreen(Some(window::Fullscreen::Exclusive(
-                    get_best_videomode(&window.current_monitor().unwrap()),
-            )));*/
+fn set_fullscreen(keyboard_input: Res<Input<KeyCode>>, mut windows: ResMut<Windows>) {
+    let mut window = windows.get_primary_mut().unwrap();
+    if keyboard_input.just_pressed(KeyCode::F11) {
+        match window.mode() {
+            WindowMode::Fullscreen => window.set_mode(WindowMode::Windowed),
+            WindowMode::Windowed => window.set_mode(WindowMode::Fullscreen),
+            _ => ()
         }
     }
 }
 
 fn exit_on_q(keyboard_input: Res<Input<KeyCode>>,
              mut app_exit_events: EventWriter<AppExit>) {
-    if keyboard_input.pressed(KeyCode::Q) {
+    if keyboard_input.just_pressed(KeyCode::Q) {
         app_exit_events.send(AppExit);
     }
 }
