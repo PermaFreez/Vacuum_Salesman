@@ -283,7 +283,7 @@ fn handle_targets(mut commands: Commands, query: Query<&mut Transform, With<Targ
                 ..Default::default()
             }).insert(Target)
             .insert(MoveDirection(direct_enum))
-            /*.insert(Collider)*/;
+            .insert(Collider);
         }
     }
 }
