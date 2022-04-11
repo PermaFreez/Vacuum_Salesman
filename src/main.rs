@@ -10,6 +10,7 @@ use bevy::{
 use rand::Rng;
 
 const TIME_STEP: f32 = 1.0 / 60.0;
+const HIGH_TIME_STEP: f32 = 1.0 / 120.0;
 const WINDOW_NAME: &str = "Vacuum salesman";
 
 const BACKGROUND_COLOR: Color = Color::rgb(0.9, 0.7, 0.6);
@@ -54,16 +55,20 @@ fn main() {
         .add_system_set(
             SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(TIME_STEP as f64))
-                .with_system(move_player)
                 .with_system(check_eating)
                 .with_system(move_targets),
+        )
+        .add_system_set(
+            SystemSet::new()
+                .with_run_criteria(FixedTimestep::step(HIGH_TIME_STEP as f64))
+                .with_system(move_player)
+                .with_system(change_direction),
         )
         .add_system(handle_targets)
         .add_system(handle_scores)
         .add_system(bevy::input::system::exit_on_esc_system)
         .add_system(exit_on_q)
         .add_system(set_fullscreen)
-        .add_system(change_direction)
         .run();
 }
 
@@ -227,20 +232,20 @@ fn move_player(keyboard_input: Res<Input<KeyCode>>,
     }
 
     if (keyboard_input.pressed(KeyCode::Left) || keyboard_input.pressed(KeyCode::A)) && left {
-        x_change -= PLAYER_SPEED * TIME_STEP;
+        x_change -= PLAYER_SPEED * HIGH_TIME_STEP;
     }
     if (keyboard_input.pressed(KeyCode::Right) || keyboard_input.pressed(KeyCode::D)) && right {
-        x_change += PLAYER_SPEED * TIME_STEP;
+        x_change += PLAYER_SPEED * HIGH_TIME_STEP;
     }
     if (keyboard_input.pressed(KeyCode::Up) || keyboard_input.pressed(KeyCode::W)) && up {
-        y_change += PLAYER_SPEED * TIME_STEP;
+        y_change += PLAYER_SPEED * HIGH_TIME_STEP;
     }
     if (keyboard_input.pressed(KeyCode::Down) || keyboard_input.pressed(KeyCode::S)) && down {
-        y_change -= PLAYER_SPEED * TIME_STEP;
+        y_change -= PLAYER_SPEED * HIGH_TIME_STEP;
     }
 
-    queries.q0().single_mut().translation.x += x_change.floor();
-    queries.q0().single_mut().translation.y += y_change.floor();
+    queries.q0().single_mut().translation.x += x_change;
+    queries.q0().single_mut().translation.y += y_change;
 }
     
 fn handle_targets(mut commands: Commands, query: Query<&mut Transform, With<Target>>) {
@@ -252,8 +257,8 @@ fn handle_targets(mut commands: Commands, query: Query<&mut Transform, With<Targ
 
     if remaining_targets == 0 {
         for _i in 0..MAX_TARGETS {
-            let x: f32 = rand::thread_rng().gen_range(-MAP_SIZE_X,MAP_SIZE_X + 1.0);
-            let y: f32 = rand::thread_rng().gen_range(-MAP_SIZE_Y,MAP_SIZE_Y);
+            let x: f32 = rand::thread_rng().gen_range(-MAP_SIZE_X + TARGET_SIZE * 0.5,MAP_SIZE_X - TARGET_SIZE * 0.5);
+            let y: f32 = rand::thread_rng().gen_range(-MAP_SIZE_Y + TARGET_SIZE * 0.5,MAP_SIZE_Y - TARGET_SIZE * 0.5);
             let direction: u8 = rand::thread_rng().gen_range(0, 4);
             let mut direct_enum: Option<Direction> = None;
 
@@ -277,7 +282,8 @@ fn handle_targets(mut commands: Commands, query: Query<&mut Transform, With<Targ
                 },
                 ..Default::default()
             }).insert(Target)
-            .insert(MoveDirection(direct_enum));
+            .insert(MoveDirection(direct_enum))
+            /*.insert(Collider)*/;
         }
     }
 }
