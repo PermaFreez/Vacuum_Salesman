@@ -38,8 +38,8 @@ fn main() {
     App::new()
         .insert_resource(WindowDescriptor {
             mode: WindowMode::Windowed,
-            //width: 1920.0,
-            //height: 1080.0,
+            width: 1920.0,
+            height: 1080.0,
             resizable: true,
             title: constants::WINDOW_NAME.to_string(),
             ..Default::default()
@@ -68,7 +68,6 @@ fn main() {
         .add_system(qol::set_fullscreen)
         .run();
 }
-
 pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Spawning the camera
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
