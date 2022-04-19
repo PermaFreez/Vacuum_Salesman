@@ -16,6 +16,8 @@ use crate::misc::qol;
 pub mod scores;
 use crate::scores::score_board;
 
+pub mod ui;
+
 pub mod solids;
 #[allow(unused_imports)]
 use crate::solids::walls;
@@ -35,18 +37,29 @@ pub mod constants {
 }
 
 fn main() {
-    App::new()
+    let mut main_app = App::new();
+
+    main_app
         .insert_resource(WindowDescriptor {
-            mode: WindowMode::Windowed,
-            width: 1920.0,
-            height: 1080.0,
+            mode: WindowMode::Fullscreen,
+            /*width: 1920.0,
+            height: 1080.0,*/
             resizable: true,
             title: constants::WINDOW_NAME.to_string(),
             ..Default::default()
         })
         .insert_resource(ClearColor(constants::BACKGROUND_COLOR))
-        .insert_resource(score_board::ScoreTimer(Timer::from_seconds(score_board::SCORE_DIFFERENCE, true)))
         .add_plugins(DefaultPlugins)
+        .add_system(bevy::input::system::exit_on_esc_system)
+        .add_system(qol::exit_on_q)
+        .add_system(qol::set_fullscreen);
+
+    main_app
+        .add_startup_system(ui::menu::draw_menu)
+        .add_system(ui::menu::buttons);
+
+    main_app
+        .insert_resource(score_board::ScoreTimer(Timer::from_seconds(score_board::SCORE_DIFFERENCE, true)))
         .add_startup_system(setup)
         .add_startup_system(solids::walls::create_walls)
         .add_system_set(
@@ -62,13 +75,14 @@ fn main() {
                 .with_system(target_handling::change_direction),
         )
         .add_system(target_handling::create_targets)
-        .add_system(score_board::handle_scores)
-        .add_system(bevy::input::system::exit_on_esc_system)
-        .add_system(qol::exit_on_q)
-        .add_system(qol::set_fullscreen)
+        .add_system(score_board::handle_scores);
+        
+    main_app
         .run();
 }
+
 pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+
     // Spawning the camera
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
 
